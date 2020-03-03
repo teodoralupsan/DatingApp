@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { tick } from '@angular/core/testing';
 
 @Component({
@@ -7,6 +7,7 @@ import { tick } from '@angular/core/testing';
   styleUrls: ['./register.component.css']
 })
 export class RegisterComponent implements OnInit {
+  @Input() valuesFromHome: any;
   model: any = {};
 
   constructor() { }
