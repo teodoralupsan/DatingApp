@@ -6,7 +6,7 @@ import { ListsComponent } from './lists/lists.component';
 
 export const appRoutes: Routes = [
     { path: 'home', component: HomeComponent },
-    { path: 'memebers', component: MemberListComponent },
+    { path: 'members', component: MemberListComponent },
     { path: 'messages', component: MessagesComponent },
     { path: 'lists', component: ListsComponent },
     // wild card route; order is important of the routes
