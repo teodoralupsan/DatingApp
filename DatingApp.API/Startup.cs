@@ -19,6 +19,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using DatingApp.API.Helpers;
+using AutoMapper;
 
 namespace DatingApp.API
 {
@@ -41,6 +42,8 @@ namespace DatingApp.API
                     opt.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                 });
             services.AddCors();
+            services.AddAutoMapper(typeof(Startup));
+            
             //services.AddSingleton(); It creates a single instance of the repository => issues for concurrent requests
             //services.AddTransient(); It creates a new instance on every request of the repository => great for lightweight services
             //It creates an instance per each http request but it uses the same instance in other calls within same web request
