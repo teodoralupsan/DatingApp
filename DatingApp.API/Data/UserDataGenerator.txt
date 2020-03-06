@@ -1,0 +1,56 @@
+https://www.json-generator.com
+
+Generate 5 females:
+[
+  '{{repeat(5)}}',
+  {
+    Username: '{{firstName("female")}}',
+    Gender: 'female',
+    DateOfBirth: '{{date(new Date(1950,0,1), new Date(2014,11,31),"YYYY-MM-dd")}}',
+    KnownAs: function(){ return this.Username;},
+    Created: '{{date(new Date(2020,0,1), new Date(2020,3,7),"YYYY-MM-dd")}}',
+    LastActive: function(){ return this.Created;},
+    Introduction: '{{lorem(1, "paragraphs")}}',
+    LookingFor: '{{lorem(1, "paragraphs")}}',
+    Interests: '{{lorem(1, "paragraphs")}}',
+    City: '{{city()}}',
+    Country: '{{country()}}',
+    Photos: [
+      {
+        Url: function(num) {
+          return 'https://randomuser.me/api/portraits/women/' + num.integer(1,99) + '.jpg';
+        },
+        IsMain: true,
+        Description: '{{lorem()}}'
+      }
+    ]
+  }
+]
+
+Generate 5 males:
+[
+  '{{repeat(5)}}',
+  {
+    Username: '{{firstName("male")}}',
+    Gender: 'male',
+    DateOfBirth: '{{date(new Date(1950,0,1), new Date(2014,11,31),"YYYY-MM-dd")}}',
+    KnownAs: function(){ return this.Username;},
+    Created: '{{date(new Date(2020,0,1), new Date(2020,3,7),"YYYY-MM-dd")}}',
+    LastActive: function(){ return this.Created;},
+    Introduction: '{{lorem(1, "paragraphs")}}',
+    LookingFor: '{{lorem(1, "paragraphs")}}',
+    Interests: '{{lorem(1, "paragraphs")}}',
+    City: '{{city()}}',
+    Country: '{{country()}}',
+    Photos: [
+      {
+        Url: function(num) {
+          return 'https://randomuser.me/api/portraits/men/' + num.integer(1,99) + '.jpg';
+        },
+        IsMain: true,
+        Description: '{{lorem()}}'
+      }
+    ]
+  }
+]
+
