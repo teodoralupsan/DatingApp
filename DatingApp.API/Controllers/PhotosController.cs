@@ -9,6 +9,7 @@ using DatingApp.API.Dtos;
 using DatingApp.API.Helpers;
 using DatingApp.API.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -56,32 +57,23 @@ namespace DatingApp.API.Controllers
         public async Task<IActionResult> AddPhotoForUser(int userId, PhotoForCreationDto photoForCreationDto)
         {
             // if the id passed is not the user from the token we throw unauthorised
-            if (userId != int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value))
+            if (!IsUserAuthorized(userId))
                 return Unauthorized();
             
             var dbUser = await _datingRepository.GetUser(userId);
 
             var file = photoForCreationDto.File;
 
-            var uploadResut = new ImageUploadResult();
+            string cloudinaryUrl = string.Empty;
+            string cloudinaryPublicId = string.Empty;
 
             if (file.Length > 0)
             {
-                using (var stream = file.OpenReadStream())
-                {
-                    var uploadParams = new ImageUploadParams()
-                    {
-                        File = new FileDescription(file.Name, stream),
-                        Transformation = new Transformation()
-                            .Width(500).Height(500).Crop("fill").Gravity("face")
-                    };
-
-                    uploadResut = _cloudinary.Upload(uploadParams);
-                }
+                UploadPhoto(file, out cloudinaryUrl, out cloudinaryPublicId);
             }
 
-            photoForCreationDto.Url = uploadResut.Uri.ToString();
-            photoForCreationDto.PublicId = uploadResut.PublicId;
+            photoForCreationDto.Url = cloudinaryUrl;
+            photoForCreationDto.PublicId = cloudinaryPublicId;
 
             var photo = _mapper.Map<Photo>(photoForCreationDto);
 
@@ -99,6 +91,54 @@ namespace DatingApp.API.Controllers
             }
 
             return BadRequest("Could not add the photo");
+        }
+
+        [HttpPost("{idPhoto}/setMain")]
+        public async Task<IActionResult> SetMainPhoto(int userId, int idPhoto)
+        {
+            if (!IsUserAuthorized(userId))
+                return Unauthorized();
+
+            var dbUser = await _datingRepository.GetUser(userId);
+            if (!dbUser.Photos.Any(p => p.Id == idPhoto))
+                return Unauthorized();
+
+            var dbPhoto = await _datingRepository.GetPhoto(idPhoto);
+            if (dbPhoto.IsMain)
+                return BadRequest("This is already the main photo!");
+
+            var currentMainPhoto = await _datingRepository.GetMainPhotoForUser(userId);
+            currentMainPhoto.IsMain = false;
+            dbPhoto.IsMain = true;
+
+            if (await _datingRepository.SaveAll())
+                return NoContent();
+
+            return BadRequest("Could not set photo to main");
+        }
+
+        private void UploadPhoto(IFormFile file, out string CloudinaryUrl, out string CloudinaryPublicId)
+        {
+            var uploadResut = new ImageUploadResult();
+
+            using (var stream = file.OpenReadStream())
+            {
+                var uploadParams = new ImageUploadParams()
+                {
+                    File = new FileDescription(file.Name, stream),
+                    Transformation = new Transformation()
+                        .Width(500).Height(500).Crop("fill").Gravity("face")
+                };
+
+                uploadResut = _cloudinary.Upload(uploadParams);
+            }
+            CloudinaryUrl = uploadResut.Uri.ToString();
+            CloudinaryPublicId = uploadResut.PublicId;
+        }
+
+        private bool IsUserAuthorized(int userId)
+        {
+            return userId == int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
         }
     }
 }
