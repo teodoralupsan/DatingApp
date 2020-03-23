@@ -117,6 +117,38 @@ namespace DatingApp.API.Controllers
             return BadRequest("Could not set photo to main");
         }
 
+        [HttpDelete("{idPhoto}")]
+        public async Task<IActionResult> DeletePhoto(int userId, int idPhoto)
+        {
+            if (!IsUserAuthorized(userId))
+                return Unauthorized();
+
+            var dbUser = await _datingRepository.GetUser(userId);
+            if (!dbUser.Photos.Any(p => p.Id == idPhoto))
+                return Unauthorized();
+
+            var dbPhoto = await _datingRepository.GetPhoto(idPhoto);
+            if (dbPhoto.IsMain)
+                return BadRequest("You cannot delete yout main photo!");
+                
+            if (dbPhoto.PublicId != null)
+            {
+                var deleteParams = new DeletionParams(dbPhoto.PublicId);
+                var result = _cloudinary.Destroy(deleteParams);
+                if (result.Result == "ok")
+                    _datingRepository.Delete(dbPhoto);
+            }
+            else
+            {
+                _datingRepository.Delete(dbPhoto);
+            }
+
+            if (await _datingRepository.SaveAll())
+                return Ok();
+            
+            return BadRequest("Failed to delete the photo");
+        }
+
         private void UploadPhoto(IFormFile file, out string CloudinaryUrl, out string CloudinaryPublicId)
         {
             var uploadResut = new ImageUploadResult();
