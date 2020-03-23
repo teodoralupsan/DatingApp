@@ -7,6 +7,7 @@ import { BsDropdownModule, TabsModule, CarouselModule } from 'ngx-bootstrap';
 import { RouterModule } from '@angular/router';
 import { JwtModule } from '@auth0/angular-jwt';
 import { FileUploadModule } from 'ng2-file-upload';
+import { BsDatepickerModule } from 'ngx-bootstrap/datepicker';
 
 import { AppComponent } from './app.component';
 import { NavComponent } from './nav/nav.component';
@@ -57,6 +58,7 @@ export function tokenGetter() {
       BsDropdownModule.forRoot(),
       TabsModule.forRoot(),
       CarouselModule.forRoot(),
+      BsDatepickerModule.forRoot(),
       RouterModule.forRoot(appRoutes),
       FileUploadModule,
       JwtModule.forRoot({
