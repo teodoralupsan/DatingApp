@@ -31,6 +31,7 @@ import { UserService } from './_services/user.service';
 import { AuthGuard } from './_guards/auth.guard';
 import { PreventUnsavedChanges } from './_guards/prevent-unsaved-changes.guard';
 import { PhotoEditorComponent } from './members/photo-editor/photo-editor.component';
+import { ListResolver } from './_resolvers/lists.resolver';
 
 export function tokenGetter() {
    return localStorage.getItem('token');
@@ -81,6 +82,7 @@ export function tokenGetter() {
       MemberDetailResolver,
       MemberListResolver,
       MemberEditResolver,
+      ListResolver,
       AuthGuard,
       PreventUnsavedChanges
    ],
