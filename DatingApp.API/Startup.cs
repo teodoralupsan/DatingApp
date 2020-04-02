@@ -92,7 +92,17 @@ namespace DatingApp.API
             // app.UseHttpsRedirection();
             app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
             app.UseAuthentication();
-            app.UseMvc();
+            app.UseDefaultFiles(); // will make the API app to search for file Index.html
+            app.UseStaticFiles();  // it automatically look into the folder named wwwroot
+            app.UseMvc(routes => 
+            {
+                // if the API app doesn't find a route then it will use this FallbackController,
+                // call Index() method where is sent in wwwroot folder in the Index.Html file
+                routes.MapSpaFallbackRoute(
+                    name: "spa-fallback",
+                    defaults: new {controller = "Fallback", action = "Index"}
+                );
+            });
         }
     }
 }
