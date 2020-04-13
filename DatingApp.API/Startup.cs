@@ -20,6 +20,10 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using DatingApp.API.Helpers;
 using AutoMapper;
+using Microsoft.AspNetCore.Identity;
+using DatingApp.API.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
 
 namespace DatingApp.API
 {
@@ -32,7 +36,7 @@ namespace DatingApp.API
 
         public IConfiguration Configuration { get; }
 
-        // Dpending on the environment we are running is either ConfigureDevelopmentService or ConfigureProductionService 
+        // Depending on the environment we are running, either ConfigureDevelopmentService or ConfigureProductionService 
         // will be called automatically by the system
         public void ConfigureDevelopmentServices(IServiceCollection services)
         {
@@ -55,33 +59,34 @@ namespace DatingApp.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
+            ConfigureIdentityBuilder(ref services);
+
+            services.AddMvc(options =>
+            {
+                var policy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
+                // by default every user will have to authenticate to every single method
+                // we can remove the [Authenticate] attribute from the controllers
+                options.Filters.Add(new AuthorizeFilter(policy)); 
+            })
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
                 .AddJsonOptions(opt =>
                 {
                     opt.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                 });
+                
             services.AddCors();
             services.Configure<CloudinarySettings>(Configuration.GetSection("CloudinarySettings"));
             services.AddAutoMapper(typeof(Startup));
             
             //services.AddSingleton(); It creates a single instance of the repository => issues for concurrent requests
             //services.AddTransient(); It creates a new instance on every request of the repository => great for lightweight services
-            //It creates an instance per each http request but it uses the same instance in other calls within same web request
-            services.AddScoped<IAuthRepository, AuthRepository>();
+            //services.AddScoped(); It creates an instance per each http request but it uses the same instance in other calls within same web request
             services.AddScoped<IDatingRepository, DatingRepository>();
-
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options => {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII
-                            .GetBytes(Configuration.GetSection("AppSettings:Token").Value)),
-                        ValidateIssuer = false,
-                        ValidateAudience = false
-                    };
-            });
             services.AddScoped<LogUserActivity>();
+            /* Class not used with IdentityUser
+            services.AddScoped<IAuthRepository, AuthRepository>();*/
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -121,6 +126,35 @@ namespace DatingApp.API
                     name: "spa-fallback",
                     defaults: new {controller = "Fallback", action = "Index"}
                 );
+            });
+        }
+
+        private void ConfigureIdentityBuilder(ref IServiceCollection services)
+        {
+            // We chose IdentityCore so we can configure it; Identity uses by default cookies and we want to use JWT token
+            IdentityBuilder builder = services.AddIdentityCore<User>();
+            builder = new IdentityBuilder(builder.UserType, typeof(Role), builder.Services);
+            builder.AddEntityFrameworkStores<DataContext>(); 
+            builder.AddRoleValidator<RoleValidator<Role>>();
+            builder.AddRoleManager<RoleManager<Role>>();
+            builder.AddSignInManager<SignInManager<User>>();
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options => {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII
+                            .GetBytes(Configuration.GetSection("AppSettings:Token").Value)),
+                        ValidateIssuer = false,
+                        ValidateAudience = false
+                    };
+            });
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
+                options.AddPolicy("ModeratePhoto", policy => policy.RequireRole("Admin", "Moderator"));
+                options.AddPolicy("VipOnly", policy => policy.RequireRole("VIP"));
+
             });
         }
     }

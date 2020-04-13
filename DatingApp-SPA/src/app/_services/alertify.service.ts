@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as alertify from 'alertifyjs';
+import { strict } from 'assert';
+import { stringify } from 'querystring';
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +23,7 @@ export class AlertifyService {
   }
 
   error(message: string) {
-    alertify.error(message);
+      alertify.error(message);
   }
 
   warning(message: string) {

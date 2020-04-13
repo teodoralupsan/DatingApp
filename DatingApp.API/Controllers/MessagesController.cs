@@ -13,7 +13,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace DatingApp.API.Controllers
 {
     [Route("api/users/{userId}/[controller]")]
-    [Authorize]
+    /* Because we added AuthorizeFilter to AuthorizationPolicyBuilder we can remove the [Authorize] attribute
+    [Authorize]*/
     [ServiceFilter(typeof(LogUserActivity))]
     [ApiController]
     public class MessagesController : ControllerBase

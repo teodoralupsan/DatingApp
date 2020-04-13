@@ -15,7 +15,8 @@ using Microsoft.Extensions.Options;
 
 namespace DatingApp.API.Controllers
 {
-    [Authorize]
+    /* Because we added AuthorizeFilter to AuthorizationPolicyBuilder we can remove the [Authorize] attribute
+    [Authorize] */
     [Route("api/users/{userId}/photos")]
     public class PhotosController : ControllerBase
     {

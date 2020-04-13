@@ -14,7 +14,8 @@ namespace DatingApp.API.Controllers
 {
     [ServiceFilter(typeof(LogUserActivity))] // every time any of the methods get called the LogUserActivity will be used,
                                              // which is updating the LastActive property for that user
-    [Authorize]
+    /* Because we added AuthorizeFilter to AuthorizationPolicyBuilder we can remove the [Authorize] attribute                                         
+    [Authorize] */
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
