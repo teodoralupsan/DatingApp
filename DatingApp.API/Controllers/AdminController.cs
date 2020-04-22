@@ -1,12 +1,17 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
 using DatingApp.API.Data;
 using DatingApp.API.Dtos;
+using DatingApp.API.Helpers;
 using DatingApp.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace DatingApp.API.Controllers
 {
@@ -16,10 +21,28 @@ namespace DatingApp.API.Controllers
     {
         private readonly DataContext _context;
         private readonly UserManager<User> _userManager;
-        public AdminController(DataContext context, UserManager<User> userManager)
+        private readonly IDatingRepository _datingRepository;
+        private readonly IOptions<CloudinarySettings> _cloudinaryConfig;
+        private Cloudinary _cloudinary;
+
+        public AdminController(
+            DataContext context,
+            UserManager<User> userManager,
+            IDatingRepository datingRepository,
+            IOptions<CloudinarySettings> cloudinaryConfig)
         {
+            _datingRepository = datingRepository;
+            _cloudinaryConfig = cloudinaryConfig;
             _userManager = userManager;
             _context = context;
+
+            Account acc = new Account(
+                _cloudinaryConfig.Value.CloudName,
+                _cloudinaryConfig.Value.ApiKey,
+                _cloudinaryConfig.Value.ApiSecret
+            );
+
+            _cloudinary = new Cloudinary(acc);
         }
 
         [Authorize(Policy = "RequireAdminRole")]
@@ -53,7 +76,7 @@ namespace DatingApp.API.Controllers
             // roleEditDto will contain the list of role names that we want our user to have (already linked and new ones)
             var selectedRoles = roleEdtDto.RoleNames;
             // selectedRoles = selectedRoles != null ? selectedRoles : new string[] {};
-            selectedRoles = selectedRoles ?? new string[] {}; // the same result as the upper line
+            selectedRoles = selectedRoles ?? new string[] { }; // the same result as the upper line
 
             // Add the roles that are not already linked
             var result = await _userManager.AddToRolesAsync(dbUser, selectedRoles.Except(dbUserRoles));
@@ -70,9 +93,58 @@ namespace DatingApp.API.Controllers
 
         [Authorize(Policy = "ModeratePhoto")]
         [HttpGet("getPhotosForModerators")]
-        public IActionResult GetPhotosForModerators()
+        public async Task<IActionResult> GetPhotosForModerators()
         {
-            return Ok("Admins and moderators can access this");
+            var photosList = await _context.Photos
+                .OrderBy(x => x.User.UserName)
+                .IgnoreQueryFilters()
+                .Where(p => !p.isApproved)
+                .Select(photo => new
+                {
+                    Id = photo.Id,
+                    Url = photo.Url,
+                    UserName = photo.User.UserName,
+                    IsApproved = photo.isApproved
+                }).ToListAsync();
+            return Ok(photosList);
+        }
+
+        [Authorize(Policy = "ModeratePhoto")]
+        [HttpPost("approvePhoto/{photoId}")]
+        public async Task<IActionResult> ApprovePhoto(int photoId)
+        {
+            var dbPhoto = await _datingRepository.GetPhoto(photoId);
+            if (dbPhoto == null)
+                return BadRequest("Photo cannot be approved");
+            dbPhoto.isApproved = true;
+            if (await _context.SaveChangesAsync() > 0)
+                return Ok();
+
+            throw new Exception("Photo failed to be approved");
+        }
+
+        [Authorize(Policy = "ModeratePhoto")]
+        [HttpDelete("rejectPhoto/{idPhoto}")]
+        public async Task<IActionResult> Delete(int idPhoto)
+        {
+            var dbPhoto = await _datingRepository.GetPhoto(idPhoto);
+
+            if (dbPhoto.PublicId != null)
+            {
+                var deleteParams = new DeletionParams(dbPhoto.PublicId);
+                var result = _cloudinary.Destroy(deleteParams);
+                if (result.Result == "ok")
+                    _datingRepository.Delete(dbPhoto);
+            }
+            else
+            {
+                _datingRepository.Delete(dbPhoto);
+            }
+
+            if (await _datingRepository.SaveAll())
+                return Ok();
+
+            return BadRequest("Failed to delete the photo");
         }
     }
 }

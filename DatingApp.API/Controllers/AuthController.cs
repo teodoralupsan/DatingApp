@@ -78,17 +78,17 @@ namespace DatingApp.API.Controllers
         public async Task<IActionResult> Login(UserForLoginDto userForLoginDto)
         {
             var dbUser = await _userManager.FindByNameAsync(userForLoginDto.Username);
-
-            var result = await _signInManager.CheckPasswordSignInAsync(dbUser, userForLoginDto.Password, false);
-            if (result.Succeeded)
-            {
-                var user = _mapper.Map<UserForListDto>(dbUser);
-                return Ok(new
+            if (dbUser != null) {
+                var result = await _signInManager.CheckPasswordSignInAsync(dbUser, userForLoginDto.Password, false);
+                if (result.Succeeded)
                 {
-                    token = GenerateJwtToken(dbUser).Result,
-                    user
-                });
-            }
+                    var user = _mapper.Map<UserForListDto>(dbUser);
+                    return Ok(new
+                    {
+                        token = GenerateJwtToken(dbUser).Result,
+                        user
+                    });
+                }}
             return Unauthorized();
         }
 

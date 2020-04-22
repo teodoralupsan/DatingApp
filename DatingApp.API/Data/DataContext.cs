@@ -29,6 +29,8 @@ namespace DatingApp.API.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.Entity<Photo>().HasQueryFilter(p => p.isApproved);
+
             builder.Entity<UserRole>(userRole => 
             {
                 userRole.HasKey(ur => new {ur.UserId, ur.RoleId});

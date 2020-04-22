@@ -29,7 +29,7 @@ namespace DatingApp.API.Controllers
             IDatingRepository datingRepository,
             IMapper mapper,
             IOptions<CloudinarySettings> cloudinaryConfig)
-            {
+        {
             _datingRepository = datingRepository;
             _mapper = mapper;
             _cloudinaryConfig = cloudinaryConfig;
@@ -61,7 +61,7 @@ namespace DatingApp.API.Controllers
             if (!IsUserAuthorized(userId))
                 return Unauthorized();
             
-            var dbUser = await _datingRepository.GetUser(userId);
+            var dbUser = await _datingRepository.GetUser(userId, true);
 
             var file = photoForCreationDto.File;
 
@@ -100,7 +100,7 @@ namespace DatingApp.API.Controllers
             if (!IsUserAuthorized(userId))
                 return Unauthorized();
 
-            var dbUser = await _datingRepository.GetUser(userId);
+            var dbUser = await _datingRepository.GetUser(userId, true);
             if (!dbUser.Photos.Any(p => p.Id == idPhoto))
                 return Unauthorized();
 
@@ -124,7 +124,7 @@ namespace DatingApp.API.Controllers
             if (!IsUserAuthorized(userId))
                 return Unauthorized();
 
-            var dbUser = await _datingRepository.GetUser(userId);
+            var dbUser = await _datingRepository.GetUser(userId, true);
             if (!dbUser.Photos.Any(p => p.Id == idPhoto))
                 return Unauthorized();
 
